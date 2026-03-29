@@ -1,1 +1,26 @@
-[]
+[
+  {
+    "courseId": "c-tr8n2w",
+    "name": "Tarandowah Golfers Club",
+    "city": "Avon, Ontario",
+    "par": 70
+  },
+  {
+    "courseId": "c-fn4k9p",
+    "name": "Forest City National Golf Club",
+    "city": "London, Ontario",
+    "par": 72
+  },
+  {
+    "courseId": "c-ox2m6b",
+    "name": "Oxbow Glen Golf & Country Club",
+    "city": "Komoka, Ontario",
+    "par": 72
+  },
+  {
+    "courseId": "c-kv5j1r",
+    "name": "King Valley Golf Club",
+    "city": "King City, Ontario",
+    "par": 72
+  }
+]
