@@ -167,4 +167,9 @@
         { "number": 14, "par": 5, "yards": 478, "handicap": 6,  "note": "Generous fairway but avoid bunkers scattered throughout. Green slopes front to back." },
         { "number": 15, "par": 3, "yards": 128, "handicap": 18, "note": "Green is bigger than it looks. Back half slopes away. Missing left leaves difficult up and down." },
         { "number": 16, "par": 4, "yards": 352, "handicap": 4,  "note": "Tee shot must split the bunkers or expect a bogey. Front right bunker and undulating green demand accuracy." },
-        { "number": 17, "par": 4, "yards": 325, "handicap": 10, "note": "Two options: lay up short of
+        { "number": 17, "par": 4, "yards": 325, "handicap": 10, "note": "Two options: lay up short of burn or carry the burn. Carry approach shot all the way." },
+        { "number": 18, "par": 4, "yards": 373, "handicap": 8,  "note": "Split the bunkers one last time — still a long approach into a long green. Limited margin for error." }
+      ]
+    }
+  ]
+}
