@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gordy Course Admin — Geomapping (Archived)</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0f1115; color: #c8cdd6; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.5; padding: 24px; max-width: 860px; }
+h1 { color: #4ade80; font-size: 13px; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 3px; }
+.sub { color: #3a4152; font-size: 11px; margin-bottom: 4px; }
+.archived { background: #1f1808; color: #f59e0b; border-left: 3px solid #f59e0b; font-size: 11px; padding: 6px 10px; border-radius: 3px; margin-bottom: 20px; }
+.section { background: #161a21; border: 1px solid #1e2330; border-radius: 3px; padding: 16px; margin-bottom: 10px; transition: opacity 0.2s; }
+.section.locked { opacity: 0.35; pointer-events: none; }
+.sec-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.badge { width: 20px; height: 20px; border-radius: 50%; font-size: 10px; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: #4ade80; color: #0f1115; }
+.badge.wait { background: #1e2330; color: #3a4152; }
+.badge.done { background: #1a3d2b; color: #4ade80; }
+.sec-title { font-size: 11px; color: #4a5568; text-transform: uppercase; letter-spacing: 1.5px; }
+label { display: block; color: #3a4152; font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 5px; }
+textarea, input[type=text] { width: 100%; background: #0a0c10; border: 1px solid #1e2330; color: #c8cdd6; font-family: 'Courier New', monospace; font-size: 12px; padding: 9px 10px; border-radius: 3px; }
+textarea { resize: vertical; }
+textarea:focus, input:focus { outline: none; border-color: #4ade80; }
+button { background: #4ade80; color: #0f1115; border: none; padding: 7px 14px; border-radius: 3px; font-family: 'Courier New', monospace; font-size: 11px; font-weight: bold; cursor: pointer; letter-spacing: 0.5px; }
+button:hover { background: #22c55e; }
+button:disabled { background: #1e2330; color: #3a4152; cursor: not-allowed; }
+.btn-sec { background: #1e2330; color: #6b7a8d; }
+.btn-sec:hover { background: #252d3d; color: #c8cdd6; }
+.row { display: flex; gap: 8px; margin-top: 10px; align-items: center; flex-wrap: wrap; }
+.meta-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; margin-top: 10px; }
+.mf { background: #0a0c10; border: 1px solid #1e2330; padding: 7px 9px; border-radius: 3px; }
+.mf-k { color: #3a4152; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; }
+.mf-v { color: #4ade80; font-size: 12px; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tee-list { margin-top: 10px; border-top: 1px solid #1e2330; padding-top: 8px; }
+.tee-row { display: flex; gap: 10px; padding: 4px 0; font-size: 11px; border-bottom: 1px solid #111519; }
+.tee-row:last-child { border-bottom: none; }
+.ti { color: #3a4152; width: 75px; flex-shrink: 0; }
+.tn { color: #8899aa; width: 70px; }
+.ts { color: #5a6a7a; }
+.ts.ml { margin-left: auto; }
+.status { font-size: 11px; padding: 6px 10px; border-radius: 3px; margin-top: 8px; }
+.s-info { background: #0d1a2a; color: #5b9bd5; border-left: 3px solid #5b9bd5; }
+.s-ok   { background: #0a1f12; color: #4ade80; border-left: 3px solid #4ade80; }
+.s-warn { background: #1f1a08; color: #f59e0b; border-left: 3px solid #f59e0b; }
+.s-err  { background: #1f0808; color: #f87171; border-left: 3px solid #f87171; }
+.map-wrap { margin-top: 12px; overflow: auto; }
+svg.osm { border: 1px solid #1e2330; border-radius: 3px; display: block; }
+table.audit { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
+table.audit th { background: #0a0c10; color: #3a4152; text-align: center; padding: 4px 6px; border: 1px solid #1e2330; font-size: 10px; text-transform: uppercase; }
+table.audit td { text-align: center; padding: 3px 6px; border: 1px solid #1a1e28; }
+table.audit td.rn { color: #c8cdd6; background: #0a0c10; font-weight: bold; }
+table.audit td.y  { background: #0a1f12; color: #4ade80; }
+table.audit td.n  { color: #1e2330; }
+table.assign { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 8px; }
+table.assign th { background: #0a0c10; color: #3a4152; text-align: left; padding: 5px 8px; border: 1px solid #1e2330; font-size: 10px; }
+table.assign td { padding: 4px 8px; border: 1px solid #1a1e28; color: #8899aa; }
+table.assign select { background: #0a0c10; border: 1px solid #1e2330; color: #c8cdd6; font-family: 'Courier New', monospace; font-size: 11px; padding: 2px 4px; border-radius: 2px; }
+#outputArea { color: #4ade80; font-size: 11px; min-height: 180px; }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<h1>⛳ Gordy Course Admin — Geomapping</h1>
+<p class="sub">DEVELOPER ONLY — course-admin-task TXT → repo-ready JSON with OSM geometry</p>
+<div class="archived">⚠ ARCHIVED — Geomapping stream paused 2026-03-30. Preserved for future Phase D development. For current course admin workflow use gordy-course-admin.html.</div>
+
+<div class="section" id="s1">
+  <div class="sec-head"><div class="badge" id="b1">1</div><span class="sec-title">Input & Parse</span></div>
+  <label>Paste course-admin-task TXT output (single course)</label>
+  <textarea id="txtIn" rows="9" placeholder="=== GORDY COURSE ADMIN ===&#10;CourseAdminTaskVersion: 1&#10;..."></textarea>
+  <div class="row"><button onclick="doParse()">Parse →</button></div>
+  <div id="parseOut" class="hidden">
+    <div class="meta-grid" id="metaGrid"></div>
+    <div class="tee-list" id="teeList"></div>
+  </div>
+</div>
+
+<div class="section locked" id="s2">
+  <div class="sec-head"><div class="badge wait" id="b2">2</div><span class="sec-title">Fetch & Verify OSM</span></div>
+  <label>Course name for Overpass query — edit if needed to avoid name collisions</label>
+  <input type="text" id="osmName" placeholder="Course name…">
+  <div class="row"><button id="fetchBtn" onclick="doFetch()">Fetch OSM →</button></div>
+  <div id="statusMsg"></div>
+  <div id="mapWrap" class="map-wrap hidden"></div>
+  <div id="auditWrap" class="hidden"></div>
+  <div id="proceedWrap" class="hidden">
+    <div class="row" style="margin-top:14px;"><button onclick="doReveal3()">Proceed to Output →</button></div>
+  </div>
+</div>
+
+<div class="section locked" id="s3">
+  <div class="sec-head"><div class="badge wait" id="b3">3</div><span class="sec-title">Process & Output</span></div>
+  <div id="assignWrap" class="hidden">
+    <label>Untagged golf features — assign hole ref or skip</label>
+    <table class="assign">
+      <thead><tr><th>Type</th><th>OSM ID</th><th>Approx centre</th><th>Hole #</th></tr></thead>
+      <tbody id="assignBody"></tbody>
+    </table>
+  </div>
+  <div class="row" id="genWrap" style="margin-top:10px;">
+    <button onclick="doGenerate()">Generate JSON →</button>
+  </div>
+  <div id="outputWrap" class="hidden" style="margin-top:14px;">
+    <div class="row" style="justify-content:space-between;align-items:center;">
+      <label style="margin:0;">Paste into GitHub repo as <span style="color:#4ade80;" id="outFile"></span></label>
+      <button class="btn-sec" onclick="doCopy(this)">📋 Copy</button>
+    </div>
+    <textarea id="outputArea" rows="22" readonly style="margin-top:6px;"></textarea>
+  </div>
+</div>
+
+<script>
+let P=null,ELS=[],NX={},fetched=false;
+
+function doParse(){
+  try{
+    P=parseTxt(document.getElementById('txtIn').value);
+    renderMeta(P);
+    document.getElementById('parseOut').classList.remove('hidden');
+    document.getElementById('b1').className='badge done';
+    unlock(2);
+    document.getElementById('osmName').value=P.name;
+  }catch(e){alert('Parse failed: '+e.message);}
+}
+
+function parseTxt(txt){
+  const lines=txt.split('\n'),meta={},tees=[];let inM=false,inT=false,cur=null;
+  for(const raw of lines){
+    const l=raw.trim();
+    if(l==='--- COURSE META ---'){inM=true;inT=false;continue;}
+    if(l==='--- TEES ---'){inM=false;inT=true;continue;}
+    if(inM&&l.includes(':'))const ci=l.indexOf(':'),meta[l.slice(0,ci).trim()]=l.slice(ci+1).trim();
+    if(inT){
+      if(l.startsWith('TEE |')){const p=l.split('|').map(s=>s.trim());cur={id:p[1],name:p[2],rating:parseFloat(p[3]),slope:parseInt(p[4]),totalYards:parseInt(p[5]),holes:[]};tees.push(cur);}
+      else if(l.startsWith('HOLE |')&&cur){const p=l.split('|').map(s=>s.trim());cur.holes.push({number:parseInt(p[1]),par:parseInt(p[2]),yards:p[3]!==''?parseInt(p[3]):null,handicap:p[4]!==''?parseInt(p[4]):null,note:p.slice(5).join('|').trim()});}
+    }
+  }
+  if(!meta['COURSE_ID'])throw new Error('COURSE_ID not found');
+  if(!tees.length)throw new Error('No tees found');
+  return{courseId:meta['COURSE_ID'],name:meta['COURSE_NAME'],city:meta['CITY'],par:parseInt(meta['PAR']),rating:parseFloat(meta['RATING']),slope:parseInt(meta['SLOPE']),totalYards:parseInt(meta['TOTAL_YARDS']),selectedTee:meta['SELECTED_TEE'],updated:meta['UPDATED']||today(),tees};
+}
+
+function renderMeta(p){
+  const fields=[['ID',p.courseId],['Name',p.name],['City',p.city],['Par',p.par],['Rating',p.rating],['Slope',p.slope],['Yards',p.totalYards],['Selected Tee',p.selectedTee]];
+  document.getElementById('metaGrid').innerHTML=fields.map(([k,v])=>`<div class="mf"><div class="mf-k">${k}</div><div class="mf-v" title="${v}">${v}</div></div>`).join('');
+  document.getElementById('teeList').innerHTML=`<div style="font-size:10px;color:#3a4152;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Tees (${p.tees.length})</div>`+p.tees.map(t=>`<div class="tee-row"><span class="ti">${t.id}</span><span class="tn">${t.name}</span><span class="ts">${t.rating} / ${t.slope}</span><span class="ts ml">${t.totalYards} yds</span></div>`).join('');
+}
+
+async function doFetch(){
+  const name=document.getElementById('osmName').value.trim();if(!name)return;
+  const btn=document.getElementById('fetchBtn');btn.disabled=true;btn.textContent='Fetching…';
+  setMsg('s-info','Querying Overpass API — may take up to 30 seconds…');
+  ['mapWrap','auditWrap','proceedWrap'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  try{
+    const res=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:buildQuery(name),headers:{'Content-Type':'text/plain'}});
+    const txt=await res.text();
+    if(!txt.trimStart().startsWith('{')){throw new Error(res.status===429?'Rate limited — wait 60s and retry.':res.status>=500?'Overpass server error — retry.':` HTTP ${res.status}`);}
+    const data=JSON.parse(txt);ELS=data.elements||[];buildNX(ELS);fetched=true;
+    const golf=ELS.filter(e=>e.tags?.golf);
+    if(!golf.length){setMsg('s-warn','No golf-tagged features found. You can still proceed — scorecard-only JSON will be generated.');}
+    else{setMsg('s-ok',`${ELS.length} elements · ${golf.length} golf-tagged features.`);renderMap(ELS);renderAudit(ELS);}
+    document.getElementById('b2').className='badge done';
+    document.getElementById('proceedWrap').classList.remove('hidden');
+  }catch(e){setMsg('s-err','Fetch failed: '+e.message);}
+  btn.disabled=false;btn.textContent='Fetch OSM →';
+}
+
+function buildQuery(name){const safe=name.replace(/"/g,'\\"');return `[out:json][timeout:90];\narea["leisure"="golf_course"]["name"~"${safe}",i]->.c;\n(\n  way(area.c)["golf"];\n  node(area.c)["golf"];\n)->.f;\n.f out body;\n>;\nout skel qt;`;}
+function buildNX(els){NX={};for(const e of els)if(e.type==='node'&&e.lat!==undefined)NX[e.id]={lat:e.lat,lng:e.lon};}
+
+const GC={fairway:'#7ec850',green:'#28a050',tee:'#d0d8e0',bunker:'#c9a84c',water_hazard:'#5b9bd5',lateral_water_hazard:'#5b9bd5',rough:'#4a7a28',pin:'#ff5555'};
+
+function renderMap(els){
+  const ns=Object.values(NX);if(!ns.length)return;
+  let[mnLa,mxLa,mnLn,mxLn]=[90,-90,180,-180];
+  for(const n of ns){if(n.lat<mnLa)mnLa=n.lat;if(n.lat>mxLa)mxLa=n.lat;if(n.lng<mnLn)mnLn=n.lng;if(n.lng>mxLn)mxLn=n.lng;}
+  const W=560,H=400,PAD=18,sx=(W-PAD*2)/(mxLn-mnLn||.001),sy=(H-PAD*2)/(mxLa-mnLa||.001);
+  const pr=(la,ln)=>[PAD+(ln-mnLn)*sx,H-PAD-(la-mnLa)*sy];
+  let svg='';
+  for(const e of els.filter(e=>e.type==='way'&&e.tags?.golf&&e.nodes)){const pts=e.nodes.map(id=>NX[id]).filter(Boolean).map(n=>pr(n.lat,n.lng).map(v=>v.toFixed(1)).join(',')).join(' ');if(pts)svg+=`<polygon points="${pts}" fill="${GC[e.tags.golf]||'#556'}" fill-opacity=".7" stroke="${GC[e.tags.golf]||'#556'}" stroke-width=".5"/>`;}
+  for(const e of els.filter(e=>e.type==='node'&&e.tags?.golf&&e.lat)){const[x,y]=pr(e.lat,e.lon);svg+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="${GC[e.tags.golf]||'#556'}"/>`;}
+  const types=[...new Set(els.filter(e=>e.tags?.golf).map(e=>e.tags.golf))];
+  const leg=types.map((t,i)=>`<g transform="translate(18,${18+i*15})"><rect width="9" height="9" fill="${GC[t]||'#556'}" rx="1"/><text x="13" y="8.5" fill="#99aabb" font-size="9" font-family="monospace">${t}</text></g>`).join('');
+  document.getElementById('mapWrap').innerHTML=`<svg class="osm" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><rect width="${W}" height="${H}" fill="#1a2a1a"/>${svg}${leg}</svg>`;
+  document.getElementById('mapWrap').classList.remove('hidden');
+}
+
+function renderAudit(els){
+  const golf=els.filter(e=>e.tags?.golf),refs=[...new Set(golf.filter(e=>e.tags.ref).map(e=>parseInt(e.tags.ref)))].sort((a,b)=>a-b),types=[...new Set(golf.map(e=>e.tags.golf))].sort(),mx={};
+  for(const e of golf){if(!e.tags.ref)continue;const r=parseInt(e.tags.ref);if(!mx[r])mx[r]={};mx[r][e.tags.golf]=(mx[r][e.tags.golf]||0)+1;}
+  const untagged=golf.filter(e=>!e.tags.ref).length;
+  let html='';
+  if(refs.length){html+=`<div style="font-size:10px;color:#3a4152;text-transform:uppercase;letter-spacing:.5px;margin-top:12px;margin-bottom:6px;">Hole Audit</div><table class="audit"><thead><tr><th>hole</th>${types.map(t=>`<th>${t.replace(/_/g,' ')}</th>`).join('')}</tr></thead><tbody>`;for(const r of refs)html+=`<tr><td class="rn">${r}</td>${types.map(t=>mx[r]?.[t]?`<td class="y">✓</td>`:`<td class="n">·</td>`).join('')}</tr>`;html+=`</tbody></table>`;}
+  if(untagged)html+=`<div class="status s-warn" style="margin-top:8px;">${untagged} feature(s) missing ref= tag.</div>`;
+  else if(refs.length)html+=`<div class="status s-ok" style="margin-top:8px;">All golf features have ref= tags.</div>`;
+  document.getElementById('auditWrap').innerHTML=html;document.getElementById('auditWrap').classList.remove('hidden');
+}
+
+function doReveal3(){
+  unlock(3);document.getElementById('b3').className='badge';
+  const untagged=ELS.filter(e=>e.tags?.golf&&!e.tags?.ref);
+  if(fetched&&untagged.length){
+    document.getElementById('assignBody').innerHTML=untagged.map(el=>{let ctr='—';if(el.type==='way'&&el.nodes){const ns=el.nodes.map(id=>NX[id]).filter(Boolean);if(ns.length)ctr=`${(ns.reduce((s,n)=>s+n.lat,0)/ns.length).toFixed(4)}, ${(ns.reduce((s,n)=>s+n.lng,0)/ns.length).toFixed(4)}`;}else if(el.lat)ctr=`${el.lat.toFixed(4)}, ${el.lon.toFixed(4)}`;const opts='<option value="">— skip —</option>'+Array.from({length:18},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join('');return`<tr><td>${el.tags.golf}</td><td style="font-size:10px">${el.id}</td><td style="font-size:10px;color:#3a4152;">${ctr}</td><td><select id="a_${el.id}">${opts}</select></td></tr>`;}).join('');
+    document.getElementById('assignWrap').classList.remove('hidden');
+  }
+}
+
+function doGenerate(){
+  const asgn={};for(const el of ELS.filter(e=>e.tags?.golf&&!e.tags?.ref)){const s=document.getElementById('a_'+el.id);if(s?.value)asgn[el.id]=parseInt(s.value);}
+  const geo=(fetched&&ELS.filter(e=>e.tags?.golf).length)?buildGeo(ELS,asgn):null;
+  const out=merge(P,geo);
+  document.getElementById('outputArea').value=JSON.stringify(out,null,2);
+  document.getElementById('outFile').textContent=`courses/${P.courseId}.json`;
+  document.getElementById('outputWrap').classList.remove('hidden');
+  document.getElementById('b3').className='badge done';
+  document.getElementById('outputArea').scrollIntoView({behavior:'smooth'});
+}
+
+function buildGeo(els,asgn){const hm={};for(const el of els.filter(e=>e.tags?.golf)){const ref=el.tags.ref?parseInt(el.tags.ref):asgn[el.id];if(!ref)continue;let coords=[];if(el.type==='way'&&el.nodes)coords=el.nodes.map(id=>NX[id]).filter(Boolean).map(n=>[n.lat,n.lng]);else if(el.type==='node'&&el.lat!==undefined)coords=[[el.lat,el.lon]];if(!coords.length)continue;if(!hm[ref])hm[ref]={ref,features:[]};hm[ref].features.push({type:el.tags.golf,coords});}return{source:'osm',fetched:today(),holes:Object.values(hm).sort((a,b)=>a.ref-b.ref)};}
+
+function merge(p,geo){const out={courseId:p.courseId,name:p.name,city:p.city,par:p.par,rating:p.rating,slope:p.slope,totalYards:p.totalYards,selectedTee:p.selectedTee,updated:p.updated,tees:p.tees.map(t=>({id:t.id,name:t.name,rating:t.rating,slope:t.slope,totalYards:t.totalYards,holes:t.holes.map(h=>({number:h.number,par:h.par,yards:h.yards,handicap:h.handicap,note:h.note||''}))}))} ;if(geo)out.geometry=geo;return out;}
+function doCopy(btn){const ta=document.getElementById('outputArea');ta.select();try{navigator.clipboard.writeText(ta.value);}catch(e){document.execCommand('copy');}btn.textContent='✓ Copied';setTimeout(()=>btn.textContent='📋 Copy',1500);}
+function unlock(n){document.getElementById('s'+n).classList.remove('locked');}
+function setMsg(cls,msg){document.getElementById('statusMsg').innerHTML=`<div class="status ${cls}">${msg}</div>`;}
+function today(){return new Date().toISOString().slice(0,10);}
+</script>
+</body>
+</html>

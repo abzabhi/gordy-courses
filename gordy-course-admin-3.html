@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gordy Course Admin</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0f1115; color: #c8cdd6; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.5; padding: 24px; max-width: 860px; }
+h1 { color: #4ade80; font-size: 13px; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 3px; }
+.sub { color: #3a4152; font-size: 11px; margin-bottom: 24px; }
+.section { background: #161a21; border: 1px solid #1e2330; border-radius: 3px; padding: 16px; margin-bottom: 10px; transition: opacity 0.2s; }
+.section.locked { opacity: 0.35; pointer-events: none; }
+.sec-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.badge { width: 20px; height: 20px; border-radius: 50%; font-size: 10px; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: #4ade80; color: #0f1115; }
+.badge.wait { background: #1e2330; color: #3a4152; }
+.badge.done { background: #1a3d2b; color: #4ade80; }
+.sec-title { font-size: 11px; color: #4a5568; text-transform: uppercase; letter-spacing: 1.5px; }
+label { display: block; color: #3a4152; font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 5px; }
+textarea, input[type=text], input[type=password] { width: 100%; background: #0a0c10; border: 1px solid #1e2330; color: #c8cdd6; font-family: 'Courier New', monospace; font-size: 12px; padding: 9px 10px; border-radius: 3px; }
+textarea { resize: vertical; }
+textarea:focus, input:focus { outline: none; border-color: #4ade80; }
+button { background: #4ade80; color: #0f1115; border: none; padding: 7px 14px; border-radius: 3px; font-family: 'Courier New', monospace; font-size: 11px; font-weight: bold; cursor: pointer; letter-spacing: 0.5px; }
+button:hover { background: #22c55e; }
+button:disabled { background: #1e2330; color: #3a4152; cursor: not-allowed; }
+.row { display: flex; gap: 8px; margin-top: 10px; align-items: center; flex-wrap: wrap; }
+.status { font-size: 11px; padding: 6px 10px; border-radius: 3px; margin-top: 8px; }
+.s-info { background: #0d1a2a; color: #5b9bd5; border-left: 3px solid #5b9bd5; }
+.s-ok   { background: #0a1f12; color: #4ade80; border-left: 3px solid #4ade80; }
+.s-warn { background: #1f1a08; color: #f59e0b; border-left: 3px solid #f59e0b; }
+.s-err  { background: #1f0808; color: #f87171; border-left: 3px solid #f87171; }
+.course-card { background: #0a0c10; border: 1px solid #1e2330; border-radius: 3px; padding: 12px; margin-top: 8px; }
+.course-card.flagged { border-color: #f59e0b; }
+.course-card.clean { border-color: #1a3d2b; }
+.cc-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
+.cc-name { color: #c8cdd6; font-size: 12px; font-weight: bold; }
+.cc-id { color: #3a4152; font-size: 10px; }
+.cc-city { color: #5a6a7a; font-size: 11px; margin-left: auto; }
+.flag-msg { color: #f59e0b; font-size: 10px; margin-bottom: 6px; }
+.meta-row { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 4px; }
+.mf-k { color: #3a4152; font-size: 9px; text-transform: uppercase; }
+.mf-v { color: #8899aa; font-size: 11px; }
+.tee-pills { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
+.tee-pill { background: #1e2330; color: #6b7a8d; font-size: 10px; padding: 2px 7px; border-radius: 10px; }
+.cb-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.cb-row input[type=checkbox] { width: auto; cursor: pointer; }
+.cb-label { font-size: 11px; color: #8899aa; cursor: pointer; }
+table.results { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
+table.results th { background: #0a0c10; color: #3a4152; text-align: left; padding: 5px 8px; border: 1px solid #1e2330; font-size: 10px; text-transform: uppercase; }
+table.results td { padding: 5px 8px; border: 1px solid #1a1e28; }
+.td-ok { color: #4ade80; }
+.td-err { color: #f87171; }
+.td-id { font-size: 10px; color: #3a4152; }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<h1>⛳ Gordy Course Admin</h1>
+<p class="sub">DEVELOPER ONLY — multi-course TXT → gordy-courses repo</p>
+
+<!-- SECTION 0 — UNLOCK -->
+<div class="section" id="s0">
+  <div class="sec-head"><div class="badge" id="b0">🔑</div><span class="sec-title">Unlock</span></div>
+  <label>Passphrase</label>
+  <input type="password" id="passInput" placeholder="Enter passphrase…" onkeydown="if(event.key==='Enter')doUnlock()">
+  <div class="row"><button onclick="doUnlock()">Unlock →</button></div>
+  <div id="unlockMsg"></div>
+</div>
+
+<!-- SECTION 1 — PARSE -->
+<div class="section locked" id="s1">
+  <div class="sec-head"><div class="badge wait" id="b1">1</div><span class="sec-title">Input & Parse</span></div>
+  <label>Paste course-admin-task TXT (one or multiple courses separated by --- NEXT COURSE ---)</label>
+  <textarea id="txtIn" rows="10" placeholder="=== GORDY COURSE ADMIN ===&#10;CourseAdminTaskVersion: 1&#10;..."></textarea>
+  <div class="row"><button onclick="doParse()">Parse →</button></div>
+  <div id="parseMsg"></div>
+  <div id="parsedCards" class="hidden" style="margin-top:10px;"></div>
+</div>
+
+<!-- SECTION 2 — REVIEW -->
+<div class="section locked" id="s2">
+  <div class="sec-head"><div class="badge wait" id="b2">2</div><span class="sec-title">Check Repo & Confirm</span></div>
+  <div id="checkMsg"></div>
+  <div id="reviewCards" style="margin-top:8px;"></div>
+  <div id="confirmRow" class="row hidden">
+    <button id="uploadBtn" onclick="doUpload()">Upload to GitHub →</button>
+    <span style="font-size:10px;color:#3a4152;">writes course files + updates index.json</span>
+  </div>
+</div>
+
+<!-- SECTION 3 — RESULTS -->
+<div class="section locked" id="s3">
+  <div class="sec-head"><div class="badge wait" id="b3">3</div><span class="sec-title">Results</span></div>
+  <div id="resultsWrap"></div>
+</div>
+
+<script>
+// ── CONSTANTS ──────────────────────────────────────────────────────────────────
+const ENCRYPTED_PAT = 'M5KzujQPmJGY7q47xZY6Uw==.gPWlmMxq2VoaEtUo.bXHUW8ROhYCQAHLervVwQ+54i7iCXHgONKTpGBtmtU/2YolyEALdUjHP1DgYCrUg8K3etNkhGUaO/7Gyy3zAXStE8Tnr7qr+WLLsZX11f+suPYRhceX2zP+slyehSKBoglfA9hJTWpS4W+Q2oA==';
+const API_BASE  = 'https://api.github.com/repos/abzabhi/gordy-courses/contents';
+const INDEX_RAW = 'https://raw.githubusercontent.com/abzabhi/gordy-courses/main/index.json';
+
+// ── STATE ──────────────────────────────────────────────────────────────────────
+let PAT = null;
+let PARSED = [];
+let REVIEWED = [];
+let INDEX_SHA = null;
+
+// ── 0: UNLOCK ──────────────────────────────────────────────────────────────────
+async function doUnlock() {
+  const pass = document.getElementById('passInput').value;
+  if (!pass) return;
+  try {
+    PAT = await decryptPAT(ENCRYPTED_PAT, pass);
+    document.getElementById('passInput').value = '';
+    document.getElementById('b0').textContent = '✓';
+    document.getElementById('b0').className = 'badge done';
+    setMsg('unlockMsg', 's-ok', 'Unlocked.');
+    unlock(1);
+  } catch(e) {
+    setMsg('unlockMsg', 's-err', 'Wrong passphrase.');
+  }
+}
+
+async function decryptPAT(blob, pass) {
+  const [s, iv, ct] = blob.split('.').map(b => Uint8Array.from(atob(b), c => c.charCodeAt(0)));
+  const enc = new TextEncoder();
+  const km  = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']);
+  const key = await crypto.subtle.deriveKey(
+    { name:'PBKDF2', salt:s, iterations:200000, hash:'SHA-256' },
+    km, { name:'AES-GCM', length:256 }, false, ['decrypt']);
+  const pt  = await crypto.subtle.decrypt({ name:'AES-GCM', iv }, key, ct);
+  return new TextDecoder().decode(pt);
+}
+
+// ── 1: PARSE ──────────────────────────────────────────────────────────────────
+function doParse() {
+  const raw = document.getElementById('txtIn').value.trim();
+  if (!raw) return;
+  try {
+    const chunks = raw.split(/---\s*NEXT COURSE\s*---/i).map(s => s.trim()).filter(Boolean);
+    PARSED = chunks.map((c, i) => {
+      try { return parseCourse(c); }
+      catch(e) { throw new Error(`Course ${i+1}: ${e.message}`); }
+    });
+    setMsg('parseMsg', 's-ok', `Parsed ${PARSED.length} course(s).`);
+    document.getElementById('parsedCards').innerHTML = PARSED.map(renderSummaryCard).join('');
+    document.getElementById('parsedCards').classList.remove('hidden');
+    document.getElementById('b1').className = 'badge done';
+    doCheck();
+  } catch(e) {
+    setMsg('parseMsg', 's-err', `Parse failed: ${e.message}`);
+  }
+}
+
+function parseCourse(txt) {
+  const lines = txt.split('\n');
+  const meta = {}; const tees = []; let inM=false, inT=false, cur=null;
+  for (const raw of lines) {
+    const l = raw.trim();
+    if (l === '--- COURSE META ---') { inM=true; inT=false; continue; }
+    if (l === '--- TEES ---')        { inM=false; inT=true; continue; }
+    if (inM && l.includes(':')) { const ci=l.indexOf(':'); meta[l.slice(0,ci).trim()]=l.slice(ci+1).trim(); }
+    if (inT) {
+      if (l.startsWith('TEE |')) {
+        const p=l.split('|').map(s=>s.trim());
+        cur={id:p[1],name:p[2],rating:parseFloat(p[3]),slope:parseInt(p[4]),totalYards:parseInt(p[5]),holes:[]};
+        tees.push(cur);
+      } else if (l.startsWith('HOLE |') && cur) {
+        const p=l.split('|').map(s=>s.trim());
+        cur.holes.push({number:parseInt(p[1]),par:parseInt(p[2]),
+          yards:p[3]!==''?parseInt(p[3]):null, handicap:p[4]!==''?parseInt(p[4]):null,
+          note:p.slice(5).join('|').trim()});
+      }
+    }
+  }
+  if (!meta['COURSE_NAME']) throw new Error('COURSE_NAME not found');
+  if (!tees.length) throw new Error('No tees found');
+  return { courseId:meta['COURSE_ID']||null, name:meta['COURSE_NAME'], city:meta['CITY']||'',
+    par:parseInt(meta['PAR'])||72, rating:parseFloat(meta['RATING']), slope:parseInt(meta['SLOPE']),
+    totalYards:parseInt(meta['TOTAL_YARDS']), selectedTee:meta['SELECTED_TEE'],
+    updated:meta['UPDATED']||today(), tees };
+}
+
+function renderSummaryCard(p) {
+  return `<div class="course-card">
+    <div class="cc-head"><span class="cc-name">${esc(p.name)}</span><span class="cc-city">${esc(p.city)}</span></div>
+    <div class="meta-row">
+      <div><div class="mf-k">Par</div><div class="mf-v">${p.par}</div></div>
+      <div><div class="mf-k">Rating</div><div class="mf-v">${p.rating}</div></div>
+      <div><div class="mf-k">Slope</div><div class="mf-v">${p.slope}</div></div>
+      <div><div class="mf-k">Yards</div><div class="mf-v">${p.totalYards}</div></div>
+      <div><div class="mf-k">Tees</div><div class="mf-v">${p.tees.length}</div></div>
+    </div>
+    <div class="tee-pills">${p.tees.map(t=>`<span class="tee-pill">${esc(t.name)}</span>`).join('')}</div>
+  </div>`;
+}
+
+// ── 2: DUPLICATE CHECK ────────────────────────────────────────────────────────
+async function doCheck() {
+  unlock(2);
+  setMsg('checkMsg', 's-info', 'Fetching repo index…');
+  let index = [];
+  try {
+    const r = await fetch(INDEX_RAW + '?t=' + Date.now());
+    if (r.ok) index = await r.json();
+  } catch(e) { /* treat as empty */ }
+
+  const usedIds = index.map(c => c.courseId);
+  const indexNorm = index.map(c => ({ id:c.courseId, norm:normName(c.name), city:(c.city||'').toLowerCase().trim() }));
+
+  REVIEWED = PARSED.map(course => {
+    const norm   = normName(course.name);
+    const city   = (course.city||'').toLowerCase().trim();
+    const match  = indexNorm.find(e => e.norm === norm && e.city === city);
+    const newId  = match ? match.id : genId(usedIds);
+    if (!match) usedIds.push(newId);
+    return { course:{ ...course, courseId:newId }, skip:!!match,
+      flagMsg:match ? `Possible duplicate of existing entry ${match.id} — check box to include anyway.` : null };
+  });
+
+  setMsg('checkMsg', 's-ok', 'Index loaded. Review and confirm below.');
+  document.getElementById('reviewCards').innerHTML = REVIEWED.map((r, i) => `
+    <div class="course-card ${r.flagMsg ? 'flagged' : 'clean'}">
+      <div class="cc-head">
+        <span class="cc-name">${esc(r.course.name)}</span>
+        <span class="cc-id">${r.course.courseId}</span>
+        <span class="cc-city">${esc(r.course.city)}</span>
+      </div>
+      ${r.flagMsg ? `<div class="flag-msg">⚠ ${r.flagMsg}</div>` : ''}
+      <div class="cb-row">
+        <input type="checkbox" id="chk_${i}" ${r.skip ? '' : 'checked'} onchange="toggleSkip(${i}, this.checked)">
+        <label class="cb-label" for="chk_${i}">${r.skip ? 'Skipping (duplicate detected) — check to include anyway' : 'Include in upload'}</label>
+      </div>
+    </div>`).join('');
+  document.getElementById('b2').className = 'badge done';
+  document.getElementById('confirmRow').classList.remove('hidden');
+}
+
+function toggleSkip(i, checked) { REVIEWED[i].skip = !checked; }
+
+function normName(n) {
+  return n.toLowerCase()
+    .replace(/\s*(golf\s*&\s*country\s*club|golf\s*and\s*country\s*club|golf\s*country\s*club|golf\s*club|golf\s*course|country\s*club|gcc|golf)\s*$/, '')
+    .trim();
+}
+
+function genId(existing) {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let id;
+  do { id = 'c-' + Array.from(crypto.getRandomValues(new Uint8Array(6))).map(b => chars[b % 36]).join(''); }
+  while (existing.includes(id));
+  return id;
+}
+
+// ── 3: UPLOAD ──────────────────────────────────────────────────────────────────
+async function doUpload() {
+  const queue = REVIEWED.filter(r => !r.skip);
+  if (!queue.length) { alert('Nothing to upload — all courses skipped.'); return; }
+  document.getElementById('uploadBtn').disabled = true;
+  unlock(3);
+  document.getElementById('b3').className = 'badge';
+  document.getElementById('resultsWrap').innerHTML = '<div class="status s-info">Uploading…</div>';
+
+  // GET index SHA + current content
+  let currentIndex = [];
+  try {
+    const r = await ghGet('index.json');
+    INDEX_SHA = r.sha;
+    currentIndex = JSON.parse(atob(r.content.replace(/\n/g, '')));
+  } catch(e) { INDEX_SHA = null; currentIndex = []; }
+
+  const results = [];
+
+  for (const { course } of queue) {
+    const path = `courses/${course.courseId}.json`;
+    try {
+      await ghPut(path, buildCourseJSON(course), `Add ${course.name}`);
+      currentIndex.push({ courseId:course.courseId, name:course.name, city:course.city, par:course.par });
+      results.push({ name:course.name, id:course.courseId, ok:true });
+    } catch(e) {
+      results.push({ name:course.name, id:course.courseId, ok:false, msg:e.message });
+    }
+  }
+
+  // PUT index
+  let indexOk = true, indexErr = '';
+  try {
+    await ghPut('index.json', JSON.stringify(currentIndex, null, 2), 'Update course index', INDEX_SHA);
+  } catch(e) { indexOk=false; indexErr=e.message; }
+
+  const okCount = results.filter(r => r.ok).length;
+  document.getElementById('b3').className = 'badge done';
+  document.getElementById('resultsWrap').innerHTML =
+    `<div class="status ${okCount === results.length && indexOk ? 's-ok' : 's-warn'}" style="margin-bottom:10px;">
+      ${okCount}/${results.length} course file(s) written · index.json ${indexOk ? 'updated ✓' : 'FAILED: ' + esc(indexErr)}
+    </div>
+    <table class="results">
+      <thead><tr><th>Course</th><th>ID</th><th>Result</th></tr></thead>
+      <tbody>${results.map(r=>`<tr>
+        <td>${esc(r.name)}</td>
+        <td class="td-id">${r.id}</td>
+        <td class="${r.ok ? 'td-ok' : 'td-err'}">${r.ok ? '✓ uploaded' : esc(r.msg)}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+}
+
+// ── GITHUB API ─────────────────────────────────────────────────────────────────
+async function ghGet(path) {
+  const r = await fetch(`${API_BASE}/${path}`, {
+    headers: { Authorization:`Bearer ${PAT}`, Accept:'application/vnd.github+json' }});
+  if (!r.ok) throw new Error(`GET ${path} → HTTP ${r.status}`);
+  return r.json();
+}
+
+async function ghPut(path, content, message, sha) {
+  const body = { message, content: btoa(unescape(encodeURIComponent(content))) };
+  if (sha) body.sha = sha;
+  const r = await fetch(`${API_BASE}/${path}`, {
+    method: 'PUT',
+    headers: { Authorization:`Bearer ${PAT}`, Accept:'application/vnd.github+json', 'Content-Type':'application/json' },
+    body: JSON.stringify(body) });
+  if (!r.ok) { const t = await r.text(); throw new Error(`HTTP ${r.status}: ${t.slice(0,120)}`); }
+  return r.json();
+}
+
+// ── HELPERS ────────────────────────────────────────────────────────────────────
+function buildCourseJSON(c) {
+  return JSON.stringify({
+    courseId:c.courseId, name:c.name, city:c.city, par:c.par,
+    rating:c.rating, slope:c.slope, totalYards:c.totalYards,
+    selectedTee:c.selectedTee, updated:c.updated,
+    tees: c.tees.map(t => ({
+      id:t.id, name:t.name, rating:t.rating, slope:t.slope, totalYards:t.totalYards,
+      holes: t.holes.map(h => ({ number:h.number, par:h.par, yards:h.yards, handicap:h.handicap, note:h.note||'' }))
+    }))
+  }, null, 2);
+}
+
+function unlock(n) { document.getElementById('s'+n).classList.remove('locked'); }
+function setMsg(id, cls, msg) { document.getElementById(id).innerHTML = `<div class="status ${cls}">${msg}</div>`; }
+function today() { return new Date().toISOString().slice(0,10); }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>
